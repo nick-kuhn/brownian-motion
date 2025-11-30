@@ -432,9 +432,6 @@ lemma locally_of_ae {p : (ι → E) → Prop} (hpX : ∀ᵐ ω ∂P, p (X · ω)
     · simp [LocalizingSequence_of_prop, if_neg hω]
     · simp [LocalizingSequence_of_prop, if_neg hω]
 
-section NormedSpace
-
-variable [NormedSpace ℝ E] [CompleteSpace E]
 
 lemma Locally.rightContinuous
     (hX : Locally (fun X ↦ ∀ ω, Function.RightContinuous (X · ω)) 𝓕 X P) :
@@ -468,7 +465,6 @@ lemma locally_isCadlag_iff :
   ⟨fun h ↦ h.isCadlag, fun h ↦ locally_of_ae h
     ⟨fun _ ↦ continuousWithinAt_const, fun _ ↦ ⟨0, tendsto_const_nhds⟩⟩⟩
 
-end NormedSpace
 
 lemma isStable_rightContinuous :
     IsStable 𝓕 (fun (X : ι → Ω → E) ↦ ∀ ω, Function.RightContinuous (X · ω)) := by
@@ -572,7 +568,7 @@ section ConditionallyCompleteLinearOrderBot
 
 variable [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
   [SecondCountableTopology ι] [DenselyOrdered ι] [NoMaxOrder ι]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [IsFiniteMeasure P]
+  [NormedAddCommGroup E] [IsFiniteMeasure P]
   {𝓕 : Filtration ι mΩ} [HasUsualConditions 𝓕 P] {X : ι → Ω → E} {p : (ι → Ω → E) → Prop}
 
 lemma locally_isCadlag_iff_locally_ae :

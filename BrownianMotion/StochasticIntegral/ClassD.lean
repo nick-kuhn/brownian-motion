@@ -370,7 +370,6 @@ lemma MeasureTheory.Adapted.norm {ι E : Type*} [NormedAddCommGroup E] [PartialO
 lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace ι]
     [FirstCountableTopology ι] [InfSet ι] [CompactIccSpace ι] [OrderBot ι] [BorelSpace ι]
     [SecondCountableTopology ι] [PseudoMetrizableSpace ι] [IsFiniteMeasure P]
-    [CompleteSpace E] [NormedSpace ℝ E]
     (hX1 : ∀ ω, IsCadlag (X · ω)) (hX2 : ClassDL X 𝓕 P) (h𝓕 : 𝓕.IsRightContinuous) :
     HasLocallyIntegrableSup X 𝓕 P := by
   unfold HasLocallyIntegrableSup
@@ -507,7 +506,7 @@ section ConditionallyCompleteLinearOrderBot
 variable [ConditionallyCompleteLinearOrderBot ι] {𝓕 : Filtration ι mΩ}
   [Filtration.HasUsualConditions 𝓕 P] [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace ι]
     [SecondCountableTopology ι] [DenselyOrdered ι] [NoMaxOrder ι] [BorelSpace ι]
-    [PseudoMetrizableSpace ι] [IsFiniteMeasure P] [CompleteSpace E] [NormedSpace ℝ E]
+    [PseudoMetrizableSpace ι] [IsFiniteMeasure P]
 
 lemma hasLocallyIntegrableSup_of_locally_classDL (hX1 : ∀ᵐ (ω : Ω) ∂P, IsCadlag (X · ω))
     (hX2 : Locally (ClassDL · 𝓕 P) 𝓕 X P) (h𝓕 : 𝓕.IsRightContinuous) :
