@@ -392,11 +392,25 @@ Let $M$ be a continuous local martingale with $M_0 = 0$. If $M$ is also a finite
 
 \section{Doob-Meyer class}
 
+\begin{definition}\label{def:JointlyStronglyMeasurable}
+  \leanok
+  \lean{ProbabilityTheory.JointlyStronglyMeasurable}
+We say that a stochastic process $X$ is jointly strongly measurable
+if the joint map $(t, \omega) \mapsto X_t(\omega)$ is strongly measurable.
+\end{definition}
+
+
+\begin{definition}\label{def:HasIntegrableSup}
+  \leanok
+  \lean{ProbabilityTheory.HasIntegrableSup}
+We say that a stochastic process is integrable if it is jointly strongly measurable and for all $t$, $X_t$ is integrable.
+A process has an integrable supremum if $(\sup_{s \le t} \Vert X_s \Vert)_t$ is integrable.
+\end{definition}
+
 \begin{definition}\label{def:locallyIntegrableSup}
-  \uses{def:locally}
+  \uses{def:locally, ProbabilityTheory.HasIntegrableSup}
   \leanok
   \lean{ProbabilityTheory.HasLocallyIntegrableSup}
-We say that a stochastic process is integrable if for all $t$, $X_t$ is integrable.
 A process has locally integrable supremum if $(\sup_{s \le t} \Vert X_s \Vert)_t$ is locally integrable.
 \end{definition}
 
@@ -481,6 +495,19 @@ A càdlàg martingale is of class D if and only if it is uniformly integrable.
 Applying Lemma~\ref{lem:uniformIntegrableIffNorm}, this follows from Lemma~\ref{lem:Submartingale.classDL} along with Lemma~\ref{lem:Submartingale.classD_iff_uniformIntegrable}.
 \end{proof}
 
+\begin{lemma}\label{lem:isStable_jointlyStronglyMeasurable}
+  \uses{def:stable, def:JointlyStronglyMeasurable}
+  \leanok
+  \lean{ProbabilityTheory.isStable_jointlyStronglyMeasurable}
+The class of jointly strongly measurable processes is stable.
+\end{lemma}
+\begin{proof}
+The stopped process at $\tau$ is obtained by precomposition with $(t, \omega) \mapsto (\min (\tau(\omega), t), \omega)$.
+Precomposing a strongly measurable function with a measurable function gives a strongly measurable function.
+On a second-countable space, the minimum of two functions is measurable, and by assumption $\tau$ is measurable.
+The result follows from this.
+\end{proof}
+
 \begin{lemma}\label{lem:isStable_progMeasurable}
   \uses{def:stable}
   \leanok
@@ -492,6 +519,17 @@ The class of progressively measurable processes with respect to a filtration $\m
 \end{proof}
 
 
+\begin{lemma}\label{lem:isStable_hasIntegrableSup}
+  \uses{def:stable, def:HasIntegrableSup}
+  \leanok
+  \lean{ProbabilityTheory.isStable_hasIntegrableSup}
+The class of process with integrable supremum is stable.
+\end{lemma}
+
+\begin{proof}\leanok
+Let $X$ be a process with integrable supremum and $\tau$ be a stopping time. Let $t \in T$. Then $(X^\tau)^*_t = \sup_{s \le t} \|X_{\tau \land s}\| \le \sup_{s \le t} \|X_s\| = X^*_t$, and as $X^*_t$ is integrable, so is $(X^\tau)^*_t$. Thus $(X^\tau \mathbb{I}_{\tau > 0})^*_t$ is integrable, concluding the proof.
+\end{proof}
+
 \begin{lemma}\label{lem:isStable_hasLocallyIntegrableSup}
   \uses{def:stable, def:locallyIntegrableSup}
   \leanok
@@ -500,7 +538,8 @@ The class of process with locally integrable supremum is stable.
 \end{lemma}
 
 \begin{proof}\leanok
-Let $X$ be a process with locally integrable supremum and $\tau$ be a stopping time. Let $t \in T$. Then $(X^\tau)^*_t = \sup_{s \le t} \|X_{\tau \land s}\| \le \sup_{s \le t} \|X_s\| = X^*_t$, and as $X^*_t$ is integrable, so is $(X^\tau)^*_t$. Thus $(X^\tau \mathbb{I}_{\tau > 0})^*_t$ is integrable, concluding the proof.
+  \uses{lem:isStable_locally, lem:isStable_hasIntegrableSup}
+This follows by combining Lemma~\ref{lem:isStable_locally} and Lemma~\ref{lem:isStable_hasIntegrableSup}.
 \end{proof}
 
 
@@ -542,6 +581,25 @@ Let $X$ be a stochastic process such that for all $t \in T$, $X^*_t := \sup_{s \
 Let $t \in T$. For every stopping time $\tau$ with $\tau \le t$, we have $\|X_\tau\| \le X^*_t$. Because by hypothesis $X^*_t$ is integrable, we deduce from Lemma~\ref{lem:uniformIntegrableDominatedSingleton} that $\{X_\tau \mid \tau \text{ is a stopping time with } \tau \le t\}$ is uniformly integrable. This proves that $X$ is of class DL.
 \end{proof}
 
+
+\begin{lemma}\label{lem:HasStronglyMeasurableSup_of_isCadlag}
+  \uses{def:HasStronglyMeasurableSup, def:isCadlag, def:JointlyStronglyMeasurable}
+  \leanok
+  \lean{JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess_of_isCadlag}
+  A process that is cadlag and jointly strongly measurable has a supremum that is jointly strongly measurable.
+\end
+\begin{proof}
+ Let $Y_t(\omega) = \|X_t(\omega)\|$. Since $X$ is jointly strongly measurable and the norm function is continuous, the process $Y$ is jointly strongly measurable.
+
+  Since the time domain $T$ is second-countable (e.g., $\mathbb{R}_{\ge 0}$), there exists a countable dense subset $D \subset T$ (e.g., $\mathbb{Q} \cap T$).
+  Because the paths of $X$ are càdlàg, they are right-continuous. For any right-continuous function, the supremum over a compact interval $[0, t]$ is equal to the supremum over the dense subset within that interval union the endpoint $t$.
+
+  Thus, we have the identity:
+  \[ \sup_{s \le t} Y_s(\omega) = \max \left( Y_t(\omega), \sup_{q \in D, q \le t} Y_q(\omega) \right). \]
+  We can rewrite the supremum over the dense set using indicator functions to separate the variables:
+  \[ \sup_{q \in D, q \le t} Y_q(\omega) = \sup_{q \in D} \left( Y_q(\omega) \cdot \mathbb{I}_{q \le t} \right). \]
+  The term $Y_q(\omega)$ is measurable (constant in time), and the indicator $\mathbb{I}_{q \le t}$ is jointly measurable. Since $D$ is countable, the supremum determines a measurable function. As the maximum of two measurable functions is measurable, the result follows.
+\end{proof}
 
 \begin{lemma}\label{lem:HasLocallyIntegrableSup.locally_classDL}
   \uses{def:locallyIntegrableSup, def:locally, def:classDL}
@@ -641,7 +699,7 @@ Assume $T$ has a bottom element $\bot$ and that its closed intervals are compact
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:isLocalizingSequence_hittingAfter_Ici, lem:sup_stoppedProcess_le}
+  \uses{lem:isLocalizingSequence_hittingAfter_Ici, lem:sup_stoppedProcess_le, lem:HasStronglyMeasurableSup_of_isCadlag}
 Set $\tau_n := \inf \{t | X_t \ge n\}$. This is a localizing sequence by Lemma~\ref{lem:isLocalizingSequence_hittingAfter_Ici}. For every $t \in T$, we have by Lemma~\ref{lem:sup_stoppedProcess_le} that $(X^{\tau_n})^*_t \le n + \mathbb{I}_{\tau_n \le t} \|X_{\tau_n}\| = n + \mathbb{I}_{\tau_n \le t} \|X_{\tau_n \land t}\|$. Because X is of class DL, $X_{\tau_n \land t}$ is integrable, so $(X^{\tau_n})^*_t$ is integrable too, so $(X^{\tau_n} \mathbb{I}_{\tau_n > 0})^*_t$ is integrable. Thus $X$ has locally integrable supremum.
 \end{proof}
 

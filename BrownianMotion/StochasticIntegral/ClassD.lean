@@ -235,9 +235,10 @@ lemma isStable_jointlyStronglyMeasurable [OrderBot ι] [TopologicalSpace ι]
     IsStable 𝓕 (JointlyStronglyMeasurable (E := E) (mΩ := mΩ) · ) := by
       sorry
 
-lemma JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess [OrderBot ι] [TopologicalSpace ι]
-    [MeasurableSpace ι] {X : ι → Ω → E} (hX : JointlyStronglyMeasurable (mΩ := mΩ) X) :
-      HasStronglyMeasurableSupProcess (mΩ := mΩ) X := by
+lemma JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess_of_isCadlag [OrderBot ι]
+    [TopologicalSpace ι] [MeasurableSpace ι] {X : ι → Ω → E}
+    (hX1 : JointlyStronglyMeasurable (mΩ := mΩ) X) (hX2 : ∀ ω : Ω, IsCadlag (X · ω)) :
+    HasStronglyMeasurableSupProcess (mΩ := mΩ) X := by
   sorry
 
 lemma isStable_hasStronglyMeasurableSupProcess [OrderBot ι] [TopologicalSpace ι]
@@ -369,63 +370,57 @@ lemma MeasureTheory.Adapted.norm {ι E : Type*} [NormedAddCommGroup E] [PartialO
 lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace ι]
     [FirstCountableTopology ι] [InfSet ι] [CompactIccSpace ι] [OrderBot ι] [BorelSpace ι]
     [SecondCountableTopology ι] [PseudoMetrizableSpace ι] [IsFiniteMeasure P]
-    (hX1 : ∀ ω, IsCadlag (X · ω))
-    (hX2 : ClassDL X 𝓕 P) (h𝓕 : 𝓕.IsRightContinuous) :
+    [CompleteSpace E] [NormedSpace ℝ E]
+    (hX1 : ∀ ω, IsCadlag (X · ω)) (hX2 : ClassDL X 𝓕 P) (h𝓕 : 𝓕.IsRightContinuous) :
     HasLocallyIntegrableSup X 𝓕 P := by
   unfold HasLocallyIntegrableSup
   rcases hX2 with ⟨hX2, hX3⟩
-  let Y : ι → Ω → ℝ := fun t ω ↦ ‖X t ω‖
-  have hY1 : Adapted 𝓕 Y := by exact MeasureTheory.Adapted.norm 𝓕 hX2.adapted
-  have hY2 : ∀ (ω : Ω), RightContinuous (Y · ω) := by
-    intro ω
-    exact (Function.RightContinuous.continuous_comp continuous_norm (hX1 ω).1)
-  let τ : ℕ → Ω → WithTop ι := (fun n ↦ hittingAfter Y (Set.Ici n) ⊥)
-  have hτ : IsLocalizingSequence 𝓕 τ P:= by
-    exact isLocalizingSequence_hittingAfter_Ici 𝓕 τ hY1 hY2 h𝓕
-  use τ
-  refine ⟨hτ, ?_⟩
-  intro n
-  have hX4 := fun (t : ι) (ω : Ω) ↦
-    sup_stoppedProcess_hittingAfter_Ici_le (X := X) t n ω
 
+  let Y : ι → Ω → ℝ := fun t ω ↦ ‖X t ω‖
+  have hY1 : Adapted 𝓕 Y := MeasureTheory.Adapted.norm 𝓕 hX2.adapted
+  have hY2 : ∀ (ω : Ω), RightContinuous (Y · ω) :=
+    fun ω ↦ (Function.RightContinuous.continuous_comp continuous_norm (hX1 ω).1)
+
+  let τ : ℕ → Ω → WithTop ι := (fun n ↦ hittingAfter Y (Set.Ici n) ⊥)
+  have hτ : IsLocalizingSequence 𝓕 τ P:= isLocalizingSequence_hittingAfter_Ici 𝓕 τ hY1 hY2 h𝓕
+  refine ⟨τ, ⟨hτ, ?_⟩⟩
+  intro n
+
+  have hX4 := fun (t : ι) (ω : Ω) ↦ sup_stoppedProcess_hittingAfter_Ici_le (X := X) t n ω
   have hX5 : JointlyStronglyMeasurable (mΩ := mΩ) X := ProgMeasurable.jointlyStronglyMeasurable hX2
+  have hX6 := JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess_of_isCadlag hX5 hX1
+
+  let Xs : ι → Ω → E := (stoppedProcess (fun i ↦ {ω | ⊥ < τ n ω}.indicator (X i)) (τ n))
+  have hX1s : ∀ ω,  IsCadlag fun t ↦ Xs t ω := isStable_isCadlag X (hX1) (τ n) (hτ.isStoppingTime n)
+
   let rhs := fun (t : ι) (ω : Ω) ↦
     ↑n + {ω | hittingAfter (fun t ω ↦ ‖X t ω‖) (Set.Ici ↑n) ⊥ ω ≤ ↑t}.indicator
     (fun ω ↦ ‖stoppedValue X (hittingAfter (fun t ω ↦ ‖X t ω‖) (Set.Ici ↑n) ⊥) ω‖) ω
-  unfold HasIntegrableSup
+
   constructor
-  · refine JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess ?_
+  · refine JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess_of_isCadlag ?_ hX1s
     refine ProgMeasurable.jointlyStronglyMeasurable (𝓕 := 𝓕) ?_
     exact isStable_progMeasurable (ι := ι) (E := E) X hX2 (τ n) (hτ.isStoppingTime n)
   · intro t
     let dom := fun ω ↦ ↑n + ‖stoppedValue X (τ n ⊓ fun _ ↦ t) ω‖
+
     let σ : Ω → WithTop ι := (τ n) ⊓ (fun _ ↦ t : Ω → WithTop ι)
     have hσ : IsStoppingTime 𝓕 σ := (hτ.isStoppingTime n).min (isStoppingTime_const 𝓕 t)
+    have hσ_le : σ ≤ (fun _ ↦ t : Ω → WithTop ι) := inf_le_right
+
     refine Integrable.mono_enorm (g := dom) ?_ ?_ ?_
-    · unfold dom
-      change Integrable ((fun ω : Ω ↦ (n : ℝ)) + (fun ω ↦ ‖stoppedValue X (τ n ⊓ fun x ↦ ↑t) ω‖)) P
+    · change Integrable ((fun ω : Ω ↦ (n : ℝ)) + (fun ω ↦ ‖stoppedValue X (τ n ⊓ fun x ↦ ↑t) ω‖)) P
       refine Integrable.add (integrable_const (n : ℝ)) ( ?_)
-      have h_le : σ ≤ (fun _ ↦ t : Ω → WithTop ι)  := by
-        intro ω
-        apply min_le_right
       rcases hX3 t with ⟨h_meas, _, ⟨C, h_bound⟩⟩
-      have := hX3 t
-      constructor
-      · exact (h_meas ⟨σ, ⟨hσ, h_le⟩ ⟩).norm
-      · rw [HasFiniteIntegral]
-        simp only [enorm_norm]
-        rw [← eLpNorm_one_eq_lintegral_enorm]
-        refine lt_of_le_of_lt (h_bound ⟨σ, ⟨ hσ , h_le ⟩⟩ ) ?_
-        exact ENNReal.coe_lt_top
+      refine ⟨(h_meas ⟨σ, ⟨hσ, hσ_le⟩ ⟩).norm , ?_⟩
+      · simp_rw [HasFiniteIntegral, enorm_norm, ← eLpNorm_one_eq_lintegral_enorm]
+        exact lt_of_le_of_lt (h_bound ⟨σ, ⟨hσ, hσ_le⟩⟩) ENNReal.coe_lt_top
     · apply StronglyMeasurable.aestronglyMeasurable
-      have hX6 := JointlyStronglyMeasurable.HasStronglyMeasurableSupProcess hX5
       have h_stopped := isStable_hasStronglyMeasurableSupProcess X hX6 (τ n) (hτ.isStoppingTime n)
       exact h_stopped.comp_measurable (measurable_const.prodMk measurable_id)
     · filter_upwards with ω
-      have h_LE (ω : Ω): 0 ≤ dom ω := by
-        refine add_nonneg ?_ ?_
-        · exact Nat.cast_nonneg' n
-        · exact norm_nonneg (stoppedValue X (τ n ⊓ fun x ↦ ↑t) ω)
+      have h_LE (ω : Ω): 0 ≤ dom ω :=
+        add_nonneg (Nat.cast_nonneg' n) (norm_nonneg (stoppedValue X (τ n ⊓ fun x ↦ ↑t) ω))
       have h_bdd_subtype : BddAbove (Set.range fun (u : {x // x ≤ t}) ↦
             ‖stoppedProcess X (τ n) u ω‖) := by
         let S := Set.Icc (⊥ : ι) t
@@ -434,19 +429,12 @@ lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [
                         (fun x ↦ ‖X x ω‖) '' S := by
           rintro _ ⟨u, rfl⟩
           simp only [stoppedProcess, Set.mem_image]
-          let time_idx := ((τ n ⊓ fun _ ↦ ↑u) ω).untopA
-          refine ⟨time_idx, ?_, ?_⟩
-          constructor
-          · exact bot_le
+          refine ⟨((τ n ⊓ fun _ ↦ ↑u) ω).untopA, ⟨bot_le, ?_ ⟩, by rw [min_comm, Pi.inf_apply]⟩
           · apply le_trans _ u.2
-            simp only [time_idx]
-            have h_le_u : (τ n ⊓ fun _ ↦ ↑u) ω ≤ (u : WithTop ι) := inf_le_right
-            change (min (τ n ω) (↑↑u) ).untopA ≤ ↑u
             rw [WithTop.untopA_eq_untop, WithTop.untop_le_iff]
-            · exact h_le_u
-            · exact ne_top_of_le_ne_top (WithTop.coe_ne_top) h_le_u
-          · dsimp [time_idx]
-            rw [min_comm]
+            · exact inf_le_right
+            · exact ne_top_of_le_ne_top (WithTop.coe_ne_top) inf_le_right
+
         apply BddAbove.mono h_subset
         have h_metric_bdd :=
           isBounded_image_of_isCadlag_of_isCompact (hX1 ω) hS_compact
@@ -476,10 +464,8 @@ lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [
               _ ≤ M := hM ⟨⟨s', hs'⟩, rfl⟩
               _ ≤ max M 0 := le_max_left M 0
           · show (fun s ↦ ⨆ (_ : s ≤ t), ‖stoppedProcess X (τ n) s ω‖) s' ≤ max M 0
-            simp only []
             have : IsEmpty (s' ≤ t) := ⟨fun h => hs' h⟩
-            rw [Real.iSup_of_isEmpty]
-            exact le_max_right M 0
+            simp only [Real.iSup_of_isEmpty, le_sup_right]
         refine le_ciSup_of_le h_bdd_nested s ?_
         refine le_ciSup_of_le (?_) hs le_rfl
         use ‖stoppedProcess X (τ n) s ω‖
@@ -490,14 +476,14 @@ lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [
         rw [Set.indicator]
         split_ifs with h
         · simp only [Set.mem_setOf_eq] at h
-          change ‖stoppedValue X (τ n) ω‖ ≤ ‖stoppedValue X (τ n ⊓ fun _ ↦ t) ω‖
-          dsimp [stoppedValue]
+          simp only [stoppedValue, Pi.inf_apply]
           rw [min_eq_left h]
         · simp only [norm_nonneg]
       calc
         ⨆ s, ⨆ (_ : s ≤ t), ‖stoppedProcess (fun i ↦ {ω | ⊥ < τ n ω}.indicator (X i)) (τ n) s ω‖ₑ
           ≤ ⨆ s, ⨆ (_ : s ≤ t), ‖stoppedProcess X (τ n) s ω‖ₑ := by
-            apply iSup₂_mono; intro s hs
+            apply iSup₂_mono
+            intro s hs
             simp only [stoppedProcess, Set.indicator, Set.mem_setOf_eq]
             split_ifs <;> simp
         _ ≤ ENNReal.ofReal (rhs t ω) := by
@@ -505,12 +491,9 @@ lemma ClassDL.hasLocallyIntegrableSup [TopologicalSpace ι] [OrderTopology ι] [
             simp only [iSup_le_iff, Subtype.forall]
             intro s hs
             rw [← enorm_norm, Real.enorm_of_nonneg]
-            · apply ENNReal.ofReal_le_ofReal
-              exact h_val_le_rhs s hs
+            · exact ENNReal.ofReal_le_ofReal <| h_val_le_rhs s hs
             · exact norm_nonneg (stoppedProcess X (τ n) s ω)
-        _ ≤ ENNReal.ofReal (dom ω) := by
-            apply ENNReal.ofReal_le_ofReal
-            exact h_rhs_le_dom
+        _ ≤ ENNReal.ofReal (dom ω) := ENNReal.ofReal_le_ofReal h_rhs_le_dom
         _ ≤ ‖dom ω‖ₑ := by
             rw [← Real.enorm_of_nonneg <| h_LE ω]
 
